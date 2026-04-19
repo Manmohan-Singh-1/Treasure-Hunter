@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Treasure Hunt — The Oracle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C97A;
+  --gold-dim: #7A6130;
+  --parchment: #F5EDD8;
+  --parchment-dark: #E8D9B8;
+  --ink: #1A1208;
+  --ink-light: #2D1F0A;
+  --smoke: #3D2E18;
+  --ash: #6B5A3E;
+  --mist: #8C7A5A;
+  --fog: #B8A882;
+  --glow-gold: 0 0 20px rgba(201,168,76,0.35);
+  --glow-soft: 0 0 40px rgba(201,168,76,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: #0E0B06;
+  color: var(--parchment);
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 17px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Starfield bg */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(120,80,20,0.06) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+.app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+
+/* ── HEADER ── */
+.site-header {
+  text-align: center;
+  padding: 3.5rem 0 2rem;
+  animation: fadeDown 0.8s ease both;
+}
+.site-header .eyebrow {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--gold-dim);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.site-header h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(28px, 6vw, 52px);
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: var(--glow-gold);
+  line-height: 1.1;
+  margin-bottom: 0.6rem;
+}
+.site-header h1 span { color: var(--parchment); }
+.site-header p {
+  font-size: 15px;
+  color: var(--mist);
+  font-style: italic;
+  letter-spacing: 0.3px;
+}
+.divider {
+  width: 120px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  margin: 1.5rem auto;
+}
+
+/* ── PANELS ── */
+.panel {
+  background: rgba(20,14,4,0.85);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 4px;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(4px);
+  position: relative;
+  overflow: hidden;
+}
+.panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent);
+}
+.panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 1.25rem;
+  display: flex; align-items: center; gap: 10px;
+}
+.panel-title::after { content: ''; flex: 1; height: 1px; background: rgba(201,168,76,0.15); }
+
+/* ── SETUP FORM ── */
+.setup-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 1.25rem; }
+@media (max-width: 520px) { .setup-grid { grid-template-columns: 1fr; } }
+
+.field label {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--gold-dim);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.field select, .field input[type=text] {
+  width: 100%;
+  background: rgba(30,20,5,0.8);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 3px;
+  color: var(--parchment);
+  font-family: 'Crimson Pro', serif;
+  font-size: 15px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  appearance: none;
+}
+.field select:focus, .field input[type=text]:focus {
+  border-color: var(--gold-dim);
+}
+.field select option { background: #1A1208; }
+
+.clue-slider-wrap { grid-column: 1 / -1; }
+.clue-slider-wrap .slider-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+input[type=range] {
+  flex: 1; -webkit-appearance: none; height: 3px;
+  background: rgba(201,168,76,0.2); border-radius: 2px; outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--gold); cursor: pointer;
+  box-shadow: 0 0 8px rgba(201,168,76,0.5);
+}
+.slider-val {
+  font-family: 'Cinzel', serif; font-size: 14px;
+  color: var(--gold); min-width: 20px; text-align: center;
+}
+
+/* ── GENERATE BUTTON ── */
+.btn-generate {
+  width: 100%; padding: 14px;
+  font-family: 'Cinzel', serif; font-size: 13px;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: all 0.3s;
+}
+.btn-generate::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(201,168,76,0.08), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.btn-generate:hover { border-color: var(--gold); color: var(--gold-light); box-shadow: var(--glow-gold); }
+.btn-generate:hover::before { opacity: 1; }
+.btn-generate:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+/* ── LOADING ── */
+.loading-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,7,2,0.92); z-index: 100;
+  align-items: center; justify-content: center; flex-direction: column;
+  gap: 20px;
+}
+.loading-overlay.show { display: flex; }
+.loading-title {
+  font-family: 'Cinzel', serif; font-size: 16px;
+  color: var(--gold); letter-spacing: 3px;
+  animation: pulse 1.5s ease infinite;
+}
+.loading-dots { display: flex; gap: 8px; }
+.loading-dots span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold-dim);
+  animation: blink 1.4s infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+@keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+
+/* ── HUNT AREA ── */
+#huntArea { animation: fadeUp 0.5s ease both; }
+
+.hunt-header-card {
+  padding: 1.25rem 1.75rem;
+  background: rgba(201,168,76,0.04);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 4px;
+  margin-bottom: 1.25rem;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.hunt-title {
+  font-family: 'Cinzel', serif; font-size: 18px;
+  color: var(--gold); font-weight: 600;
+}
+.hunt-meta { font-size: 13px; color: var(--mist); font-style: italic; }
+.progress-wrap { display: flex; align-items: center; gap: 12px; }
+.progress-bar-track {
+  width: 120px; height: 4px;
+  background: rgba(201,168,76,0.15);
+  border-radius: 2px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; background: var(--gold);
+  border-radius: 2px; transition: width 0.5s ease;
+  box-shadow: 0 0 6px rgba(201,168,76,0.5);
+}
+.progress-label { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold-dim); }
+
+/* ── CLUE CARDS ── */
+.clue-card {
+  background: rgba(18,12,3,0.9);
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 10px;
+  transition: all 0.3s;
+  position: relative; overflow: hidden;
+}
+.clue-card.state-active {
+  border-color: rgba(201,168,76,0.4);
+  box-shadow: 0 0 20px rgba(201,168,76,0.08);
+}
+.clue-card.state-solved {
+  border-color: rgba(80,160,80,0.3);
+  background: rgba(10,25,10,0.6);
+}
+.clue-card.state-locked { opacity: 0.3; pointer-events: none; }
+
+.clue-card-top { display: flex; align-items: flex-start; gap: 14px; }
+.clue-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold-dim);
+  flex-shrink: 0; margin-top: 2px;
+}
+.clue-card.state-active .clue-num { border-color: var(--gold-dim); color: var(--gold); }
+.clue-card.state-solved .clue-num {
+  border-color: rgba(80,200,80,0.5); color: #5CB85C;
+  background: rgba(80,200,80,0.08);
+}
+.clue-body { flex: 1; }
+.clue-riddle {
+  font-size: 16px; line-height: 1.75; color: var(--parchment-dark);
+  font-style: italic; margin-bottom: 10px;
+}
+.clue-hint-text {
+  font-size: 13px; color: var(--ash); font-style: italic;
+  border-left: 2px solid var(--gold-dim); padding-left: 10px;
+  margin-bottom: 10px; display: none;
+}
+.solved-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Cinzel', serif; font-size: 11px;
+  color: #5CB85C; letter-spacing: 1px;
+  background: rgba(80,200,80,0.08);
+  border: 1px solid rgba(80,200,80,0.2);
+  padding: 4px 12px; border-radius: 2px;
+}
+.answer-row { display: flex; gap: 8px; margin-top: 8px; }
+.answer-input {
+  flex: 1; background: rgba(30,20,5,0.8);
+  border: 1px solid rgba(201,168,76,0.2); border-radius: 3px;
+  color: var(--parchment); font-family: 'Crimson Pro', serif;
+  font-size: 15px; padding: 9px 12px; outline: none;
+  transition: border-color 0.2s;
+}
+.answer-input:focus { border-color: var(--gold-dim); }
+.btn-check {
+  padding: 9px 18px; background: transparent;
+  border: 1px solid rgba(201,168,76,0.3); border-radius: 3px;
+  color: var(--gold-dim); font-family: 'Cinzel', serif;
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-check:hover { border-color: var(--gold); color: var(--gold); }
+
+.clue-feedback {
+  font-size: 13px; margin-top: 6px; min-height: 18px;
+  font-style: italic; transition: all 0.3s;
+}
+.clue-feedback.wrong { color: #CC5555; }
+.clue-feedback.right { color: #5CB85C; }
+
+/* ── CHAT ── */
+.chat-panel { padding: 0; overflow: hidden; }
+.chat-top {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(201,168,76,0.12);
+  display: flex; align-items: center; gap: 10px;
+}
+.oracle-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.6);
+  animation: oraclePulse 2s infinite;
+}
+@keyframes oraclePulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.chat-name { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; color: var(--gold-dim); }
+
+.chat-messages {
+  padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 280px; overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,168,76,0.2) transparent;
+}
+.msg { display: flex; gap: 10px; align-items: flex-end; }
+.msg.user { flex-direction: row-reverse; }
+.msg-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-size: 11px;
+  flex-shrink: 0;
+}
+.msg.bot .msg-av { background: rgba(201,168,76,0.1); color: var(--gold-dim); border: 1px solid rgba(201,168,76,0.2); }
+.msg.user .msg-av { background: rgba(60,40,10,0.5); color: var(--ash); border: 1px solid rgba(201,168,76,0.1); }
+.msg-bub {
+  max-width: 78%; font-size: 14px; line-height: 1.6;
+  padding: 10px 14px; border-radius: 3px;
+}
+.msg.bot .msg-bub {
+  background: rgba(25,17,4,0.8);
+  border: 1px solid rgba(201,168,76,0.12);
+  color: var(--parchment-dark); font-style: italic;
+}
+.msg.user .msg-bub {
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.2);
+  color: var(--parchment);
+}
+.typing-bubble .msg-bub { display: flex; gap: 4px; align-items: center; }
+.t-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold-dim); animation: blink 1.3s infinite;
+}
+.t-dot:nth-child(2){animation-delay:0.2s}
+.t-dot:nth-child(3){animation-delay:0.4s}
+
+.quick-pills {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 10px 20px; border-top: 1px solid rgba(201,168,76,0.08);
+}
+.pill {
+  font-size: 12px; padding: 4px 12px;
+  background: transparent; border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 20px; color: var(--mist); cursor: pointer;
+  font-family: 'Crimson Pro', serif; transition: all 0.2s;
+}
+.pill:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+
+.chat-input-row {
+  display: flex; gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(201,168,76,0.12);
+}
+.chat-input {
+  flex: 1; background: rgba(20,13,3,0.8);
+  border: 1px solid rgba(201,168,76,0.18); border-radius: 3px;
+  color: var(--parchment); font-family: 'Crimson Pro', serif;
+  font-size: 15px; padding: 9px 12px; outline: none;
+  transition: border-color 0.2s;
+}
+.chat-input:focus { border-color: var(--gold-dim); }
+.btn-send {
+  padding: 9px 18px; background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.3); border-radius: 3px;
+  color: var(--gold); font-family: 'Cinzel', serif;
+  font-size: 11px; letter-spacing: 1.5px; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-send:hover { background: rgba(201,168,76,0.18); box-shadow: var(--glow-gold); }
+.btn-send:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── VICTORY ── */
+.victory-panel {
+  display: none; text-align: center; padding: 2.5rem;
+  border-color: rgba(201,168,76,0.5);
+}
+.victory-panel.show { display: block; animation: fadeUp 0.6s ease both; }
+.victory-panel h2 {
+  font-family: 'Cinzel', serif; font-size: 28px;
+  color: var(--gold); text-shadow: var(--glow-gold); margin-bottom: 0.75rem;
+}
+.victory-panel p { color: var(--parchment-dark); font-style: italic; font-size: 16px; margin-bottom: 1.5rem; }
+
+/* ── MODEL CONFIG CARD ── */
+.config-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.config-item {
+  background: rgba(201,168,76,0.04); border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 3px; padding: 10px 14px;
+}
+.config-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; color: var(--gold-dim); margin-bottom: 4px; }
+.config-val { font-size: 16px; color: var(--parchment); font-weight: 300; }
+
+/* ── LEADERBOARD ── */
+.lb-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0; border-bottom: 1px solid rgba(201,168,76,0.07);
+  font-size: 14px;
+}
+.lb-rank { font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold-dim); width: 24px; text-align: center; }
+.lb-name { flex: 1; color: var(--parchment-dark); }
+.lb-score { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold-dim); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation: fadeUp 0.4s ease both; }
+
+/* ── NAV TABS ── */
+.nav-tabs {
+  display: flex; gap: 0;
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 3px; margin-bottom: 1.25rem; overflow: hidden;
+}
+.nav-tab {
+  flex: 1; padding: 10px;
+  font-family: 'Cinzel', serif; font-size: 10px;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: transparent; border: none;
+  color: var(--mist); cursor: pointer; transition: all 0.2s;
+  border-right: 1px solid rgba(201,168,76,0.15);
+}
+.nav-tab:last-child { border-right: none; }
+.nav-tab.active { background: rgba(201,168,76,0.08); color: var(--gold); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* scroll hint */
+.scroll-hint { font-size: 12px; color: var(--ash); text-align: center; padding-top: 8px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="eyebrow">Powered by Groq AI</div>
+    <h1>The Oracle's <span>Treasure Hunt</span></h1>
+    <div class="divider"></div>
+    <p>AI-generated riddles · Chatbot guide · Real-time adventure</p>
+  </header>
+
+  <!-- NAV TABS -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('hunt')">Hunt</button>
+    <button class="nav-tab" onclick="switchTab('config')">Model Config</button>
+    <button class="nav-tab" onclick="switchTab('leaderboard')">Leaderboard</button>
+    <button class="nav-tab" onclick="switchTab('about')">About</button>
+  </div>
+
+  <!-- TAB: HUNT -->
+  <div class="tab-content active" id="tab-hunt">
+
+    <!-- SETUP PANEL -->
+    <div class="panel" id="setupPanel">
+      <div class="panel-title">Configure Your Hunt</div>
+      <div class="setup-grid">
+        <div class="field">
+          <label>Your Name</label>
+          <input type="text" id="playerName" placeholder="Enter your name..." />
+        </div>
+        <div class="field">
+          <label>Theme</label>
+          <select id="themeSelect">
+            <option value="ancient egypt">Ancient Egypt</option>
+            <option value="deep ocean">Deep Ocean</option>
+            <option value="space exploration">Space Exploration</option>
+            <option value="medieval castle">Medieval Castle</option>
+            <option value="enchanted forest">Enchanted Forest</option>
+            <option value="lost civilization">Lost Civilization</option>
+            <option value="pirate adventure">Pirate Adventure</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Difficulty</label>
+          <select id="diffSelect">
+            <option value="easy">Easy — Apprentice</option>
+            <option value="medium" selected>Medium — Adventurer</option>
+            <option value="hard">Hard — Master</option>
+          </select>
+        </div>
+        <div class="field clue-slider-wrap">
+          <label>Number of Clues</label>
+          <div class="slider-row">
+            <input type="range" id="clueSlider" min="3" max="6" value="4" step="1"
+              oninput="document.getElementById('sliderVal').textContent=this.value" />
+            <span class="slider-val" id="sliderVal">4</span>
+          </div>
+        </div>
+        <div class="field clue-slider-wrap">
+          <label>Temperature (Creativity)</label>
+          <div class="slider-row">
+            <input type="range" id="tempSlider" min="0.1" max="1.5" value="0.7" step="0.1"
+              oninput="document.getElementById('tempVal').textContent=this.value" />
+            <span class="slider-val" id="tempVal">0.7</span>
+          </div>
+        </div>
+        <div class="field clue-slider-wrap">
+          <label>Top-P (Diversity)</label>
+          <div class="slider-row">
+            <input type="range" id="topPSlider" min="0.5" max="1.0" value="0.9" step="0.1"
+              oninput="document.getElementById('topPVal').textContent=this.value" />
+            <span class="slider-val" id="topPVal">0.9</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-generate" id="generateBtn" onclick="startHunt()">
+        Begin the Hunt ✦
+      </button>
+    </div>
+
+    <!-- HUNT AREA -->
+    <div id="huntArea" style="display:none">
+
+      <div class="hunt-header-card">
+        <div>
+          <div class="hunt-title" id="huntTitle">—</div>
+          <div class="hunt-meta" id="huntMeta">—</div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+          </div>
+          <span class="progress-label" id="progressLabel">0/0</span>
+        </div>
+      </div>
+
+      <!-- CLUES LIST -->
+      <div id="cluesList" style="margin-bottom:1.25rem"></div>
+
+      <!-- VICTORY -->
+      <div class="panel victory-panel" id="victoryPanel">
+        <h2>✦ Treasure Found! ✦</h2>
+        <p id="victoryMsg">You have conquered the hunt!</p>
+        <button class="btn-generate" onclick="resetHunt()" style="max-width:260px;margin:0 auto">
+          New Hunt ✦
+        </button>
+      </div>
+
+      <!-- CHAT -->
+      <div class="panel chat-panel">
+        <div class="chat-top">
+          <div class="oracle-dot"></div>
+          <span class="chat-name">The Oracle — Your Guide</span>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="quick-pills" id="quickPills"></div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chatInput" placeholder="Ask the Oracle..." onkeydown="if(event.key==='Enter')sendChat()" />
+          <button class="btn-send" id="sendBtn" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+
+      <button class="btn-generate" onclick="resetHunt()" style="margin-top:1rem;opacity:0.5;font-size:10px">
+        ← New Hunt
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB: MODEL CONFIG -->
+  <div class="tab-content" id="tab-config">
+    <div class="panel">
+      <div class="panel-title">AI Model Configuration</div>
+      <div class="config-grid" id="configGrid">
+        <div class="config-item"><div class="config-label">Model</div><div class="config-val" id="cfgModel">—</div></div>
+        <div class="config-item"><div class="config-label">Temperature</div><div class="config-val" id="cfgTemp">—</div></div>
+        <div class="config-item"><div class="config-label">Top-P</div><div class="config-val" id="cfgTopP">—</div></div>
+        <div class="config-item"><div class="config-label">Difficulty</div><div class="config-val" id="cfgDiff">—</div></div>
+        <div class="config-item"><div class="config-label">Domain</div><div class="config-val">Gaming / Education</div></div>
+        <div class="config-item"><div class="config-label">Memory</div><div class="config-val">Session-based</div></div>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div class="panel-title">Temperature Explained</div>
+        <p style="font-size:14px;color:var(--mist);line-height:1.8;font-style:italic">
+          <strong style="color:var(--fog);font-style:normal">Low (0.1-0.5):</strong> Predictable, factual responses. Riddles are straightforward with clear logic. Chat responses are direct and helpful.<br>
+          <strong style="color:var(--fog);font-style:normal">Medium (0.6-0.9):</strong> Balanced creativity. Riddles have layers and metaphors. Chat provides atmospheric guidance with some flair.<br>
+          <strong style="color:var(--fog);font-style:normal">High (1.0-1.5):</strong> Maximum creativity and unpredictability. Riddles become poetic, cryptic, and surprising. Chat responses are more elaborate and imaginative.
+        </p>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div class="panel-title">Top-P (Nucleus Sampling)</div>
+        <p style="font-size:14px;color:var(--mist);line-height:1.8;font-style:italic">
+          <strong style="color:var(--fog);font-style:normal">Low (0.5-0.7):</strong> Focused responses. AI considers only the most likely word choices, resulting in coherent but less varied riddles and chat.<br>
+          <strong style="color:var(--fog);font-style:normal">Medium (0.8-0.9):</strong> Balanced diversity. Good mix of predictability and creativity for engaging hunts.<br>
+          <strong style="color:var(--fog);font-style:normal">High (1.0):</strong> Maximum diversity. AI considers all possible words, leading to more unexpected and varied responses, but potentially less coherent.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: LEADERBOARD -->
+  <div class="tab-content" id="tab-leaderboard">
+    <div class="panel">
+      <div class="panel-title">Hall of Hunters</div>
+      <div id="lbList"><p style="color:var(--ash);font-style:italic;font-size:14px">Loading...</p></div>
+    </div>
+  </div>
+
+  <!-- TAB: ABOUT -->
+  <div class="tab-content" id="tab-about">
+    <div class="panel">
+      <div class="panel-title">About This Project</div>
+      <div style="font-size:15px;color:var(--mist);line-height:2;font-style:italic">
+        <p><strong style="color:var(--fog);font-style:normal">Domain:</strong> Interactive Gaming & Education</p>
+        <p><strong style="color:var(--fog);font-style:normal">API:</strong> Groq (LLaMA 3.3 70B)</p>
+        <p><strong style="color:var(--fog);font-style:normal">Framework:</strong> Python Flask + SQLite</p>
+        <p><strong style="color:var(--fog);font-style:normal">Problem Solved:</strong> AI generates unique, themed treasure hunt riddles with an interactive chatbot guide that provides contextual hints without revealing answers.</p>
+        <p><strong style="color:var(--fog);font-style:normal">Data Flow:</strong> User Input → Flask API → Groq AI → JSON Response → SQLite DB → Frontend</p>
+        <p><strong style="color:var(--fog);font-style:normal">Memory:</strong> Session-based chat history stored in SQLite database</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Tech Stack</div>
+      <div style="font-size:14px;color:var(--mist);line-height:2;font-style:italic">
+        Frontend: HTML5 · CSS3 · Vanilla JS<br>
+        Backend: Python 3.11 · Flask · Flask-CORS<br>
+        Database: SQLite3 (players, hunts, chat_messages, clue_attempts)<br>
+        AI: Groq Python SDK · llama-3.3-70b-versatile<br>
+        Deployment: Localhost / Any Python host (Render, Railway, etc.)
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-title">The Oracle is crafting your hunt…</div>
+  <div class="loading-dots"><span></span><span></span><span></span></div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let state = {
+  playerId: null, playerName: 'Explorer',
+  huntId: null, clues: [], solved: [],
+  currentClue: 0, theme: '', huntData: null,
+  isChatLoading: false, temperature: 0.7, topP: 0.9
+};
+
+// ── Tab switching ──────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.nav-tab').forEach((t,i) => {
+    const tabs = ['hunt','config','leaderboard','about'];
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'leaderboard') loadLeaderboard();
+}
+
+// ── Generate Hunt ──────────────────────────────────────────────────
+async function startHunt() {
+  const name = document.getElementById('playerName').value.trim() || 'Explorer';
+  const theme = document.getElementById('themeSelect').value;
+  const diff = document.getElementById('diffSelect').value;
+  const count = document.getElementById('clueSlider').value;
+  const temperature = parseFloat(document.getElementById('tempSlider').value);
+  const topP = parseFloat(document.getElementById('topPSlider').value);
+
+  state.playerName = name;
+  state.theme = theme;
+  state.temperature = temperature;
+  state.topP = topP;
+
+  document.getElementById('loadingOverlay').classList.add('show');
+  document.getElementById('generateBtn').disabled = true;
+
+  // Create player first
+  try {
+    const pRes = await fetch('/api/player', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    const pData = await pRes.json();
+    if (pData.success) state.playerId = pData.player_id;
+  } catch(e) {}
+
+  // Generate hunt
+  try {
+    const res = await fetch('/api/generate_hunt', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({theme, difficulty: diff, clue_count: count, player_id: state.playerId, player_name: name, temperature, top_p: topP})
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    state.huntId = data.hunt_id;
+    state.clues = data.hunt.clues;
+    state.solved = new Array(state.clues.length).fill(false);
+    state.currentClue = 0;
+    state.huntData = data.hunt;
+
+    // Update model config tab
+    if (data.model_config) {
+      document.getElementById('cfgModel').textContent = 'llama-3.3-70b';
+      document.getElementById('cfgTemp').textContent = data.model_config.temperature;
+      document.getElementById('cfgTopP').textContent = data.model_config.top_p;
+      document.getElementById('cfgDiff').textContent = data.model_config.difficulty;
+    }
+
+    document.getElementById('setupPanel').style.display = 'none';
+    document.getElementById('huntArea').style.display = 'block';
+    document.getElementById('huntTitle').textContent = data.hunt.title;
+    document.getElementById('huntMeta').textContent = `${theme} · ${diff} · ${state.clues.length} clues`;
+
+    renderClues();
+    updateProgress();
+    document.getElementById('chatMessages').innerHTML = '';
+    const welcome = `Welcome, ${name}! 🗺️ Your hunt: "${data.hunt.title}". ${data.hunt.intro} You have ${state.clues.length} clues. Type "hint" for help. May fortune favour you!`;
+    addMsg('bot', welcome);
+    setQuickPills(['Give me a hint', 'What is this theme about?', 'Am I close?']);
+
+  } catch(e) {
+    alert('Error generating hunt: ' + e.message);
+    document.getElementById('generateBtn').disabled = false;
+  }
+  document.getElementById('loadingOverlay').classList.remove('show');
+}
+
+// ── Render Clues ──────────────────────────────────────────────────
+function renderClues() {
+  const list = document.getElementById('cluesList');
+  list.innerHTML = '';
+  state.clues.forEach((clue, i) => {
+    const isSolved = state.solved[i];
+    const isActive = i === state.currentClue && !isSolved;
+    const isLocked = i > state.currentClue;
+    const stateClass = isSolved ? 'state-solved' : isActive ? 'state-active' : isLocked ? 'state-locked' : '';
+
+    const card = document.createElement('div');
+    card.className = `clue-card fade-in ${stateClass}`;
+    card.id = `clue-${i}`;
+    card.innerHTML = `
+      <div class="clue-card-top">
+        <div class="clue-num">${isSolved ? '✓' : i+1}</div>
+        <div class="clue-body">
+          <div class="clue-riddle">"${clue.riddle}"</div>
+          ${isActive ? `<div class="clue-hint-text" id="hint-${i}">${clue.hint}</div>` : ''}
+          ${isSolved ? `<div class="solved-badge">✦ ${clue.answer}</div>` : ''}
+          ${isActive ? `
+            <div class="answer-row">
+              <input class="answer-input" id="ans-${i}" placeholder="Speak your answer..." onkeydown="if(event.key==='Enter')checkAns(${i})" />
+              <button class="btn-check" onclick="checkAns(${i})">Submit</button>
+            </div>
+            <div class="clue-feedback" id="fb-${i}"></div>
+          ` : ''}
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+async function checkAns(i) {
+  const input = document.getElementById(`ans-${i}`);
+  const fb = document.getElementById(`fb-${i}`);
+  const ans = input.value.trim();
+  if (!ans) return;
+
+  const res = await fetch('/api/check_answer', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({hunt_id: state.huntId, clue_index: i, answer: ans, correct_answer: state.clues[i].answer})
+  });
+  const data = await res.json();
+
+  if (data.is_correct) {
+    fb.className = 'clue-feedback right'; fb.textContent = '✦ Correct! Well done.';
+    state.solved[i] = true;
+    if (i + 1 < state.clues.length) state.currentClue = i + 1;
+    setTimeout(() => {
+      renderClues(); updateProgress();
+      if (i + 1 < state.clues.length) {
+        addMsg('bot', `Magnificent! "${state.clues[i].answer}" — ${state.clues[i].explanation} On to clue ${i+2}!`);
+        setQuickPills([`Hint for clue ${i+2}`, 'How many left?', 'This is fun!']);
+      } else { completeHunt(); }
+    }, 700);
+  } else {
+    fb.className = 'clue-feedback wrong'; fb.textContent = 'Not quite... seek the Oracle for guidance.';
+    input.value = ''; input.focus();
+  }
+}
+
+async function completeHunt() {
+  updateProgress();
+  await fetch('/api/complete_hunt', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({hunt_id: state.huntId, player_id: state.playerId})
+  });
+  const vp = document.getElementById('victoryPanel');
+  document.getElementById('victoryMsg').textContent = `${state.playerName}, you've claimed the treasure! ${state.huntData?.treasure}`;
+  vp.classList.add('show');
+  addMsg('bot', `⚡ INCREDIBLE, ${state.playerName}! You have conquered every riddle! ${state.huntData?.treasure} The Oracle is proud.`);
+}
+
+function updateProgress() {
+  const n = state.solved.filter(Boolean).length;
+  const total = state.clues.length;
+  document.getElementById('progressFill').style.width = total ? (n/total*100) + '%' : '0%';
+  document.getElementById('progressLabel').textContent = `${n}/${total}`;
+}
+
+// ── Chat ──────────────────────────────────────────────────────────
+function addMsg(role, text) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = role === 'bot' ? '✦' : state.playerName.charAt(0).toUpperCase();
+  const bub = document.createElement('div');
+  bub.className = 'msg-bub';
+  bub.textContent = text;
+  div.appendChild(av); div.appendChild(bub);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.id = 'typing'; div.className = 'msg bot typing-bubble';
+  div.innerHTML = `<div class="msg-av">✦</div><div class="msg-bub"><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping() { const el = document.getElementById('typing'); if(el) el.remove(); }
+
+function setQuickPills(pills) {
+  const c = document.getElementById('quickPills');
+  c.innerHTML = '';
+  pills.forEach(p => {
+    const el = document.createElement('button');
+    el.className = 'pill'; el.textContent = p;
+    el.onclick = () => { document.getElementById('chatInput').value = p; sendChat(); };
+    c.appendChild(el);
+  });
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg || state.isChatLoading || !state.huntId) return;
+  state.isChatLoading = true;
+  input.value = '';
+  document.getElementById('sendBtn').disabled = true;
+  addMsg('user', msg);
+  showTyping();
+
+  // Show hint text if user asks
+  if (msg.toLowerCase().includes('hint') || msg.toLowerCase().includes('help')) {
+    const hintEl = document.getElementById(`hint-${state.currentClue}`);
+    if (hintEl) hintEl.style.display = 'block';
+  }
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        hunt_id: state.huntId, message: msg,
+        clues: state.clues, current_clue: state.currentClue,
+        solved: state.solved, player_name: state.playerName,
+        theme: state.theme, temperature: state.temperature, top_p: state.topP
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    if (data.success) addMsg('bot', data.reply);
+    else addMsg('bot', 'The Oracle stirs... but no words come. Try again.');
+  } catch(e) {
+    removeTyping();
+    addMsg('bot', 'The Oracle is momentarily silent. Try again.');
+  }
+  state.isChatLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+  input.focus();
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────
+async function loadLeaderboard() {
+  const list = document.getElementById('lbList');
+  try {
+    const res = await fetch('/api/leaderboard');
+    const data = await res.json();
+    if (!data.leaderboard.length) {
+      list.innerHTML = '<p style="color:var(--ash);font-style:italic;font-size:14px">No hunters yet. Be the first!</p>';
+      return;
+    }
+    list.innerHTML = data.leaderboard.map((r, i) => `
+      <div class="lb-row">
+        <div class="lb-rank">${i+1}</div>
+        <div class="lb-name">${r.name}</div>
+        <div class="lb-score">${r.completed || 0} completed · ${r.total_solved || 0} solved</div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<p style="color:var(--ash);font-style:italic;font-size:14px">Could not load leaderboard.</p>'; }
+}
+
+// ── Reset ─────────────────────────────────────────────────────────
+function resetHunt() {
+  state = {...state, huntId: null, clues: [], solved: [], currentClue: 0, huntData: null};
+  document.getElementById('setupPanel').style.display = 'block';
+  document.getElementById('huntArea').style.display = 'none';
+  document.getElementById('victoryPanel').classList.remove('show');
+  document.getElementById('chatMessages').innerHTML = '';
+  document.getElementById('cluesList').innerHTML = '';
+  document.getElementById('generateBtn').disabled = false;
+}
+</script>
+</body>
+</html>
