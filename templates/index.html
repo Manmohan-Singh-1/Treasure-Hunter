@@ -21,6 +21,25 @@
   --fog: #B8A882;
   --glow-gold: 0 0 20px rgba(201,168,76,0.35);
   --glow-soft: 0 0 40px rgba(201,168,76,0.15);
+  --bg: #0E0B06;
+  --text: var(--parchment);
+  --panel-bg: rgba(20,14,4,0.85);
+  --panel-border: rgba(201,168,76,0.2);
+  --input-bg: rgba(30,20,5,0.8);
+  --input-border: rgba(201,168,76,0.25);
+  --chat-bg: rgba(25,17,4,0.8);
+  --user-msg-bg: rgba(201,168,76,0.08);
+  --light-bg: #EFE5D1;
+  --light-text: #3C2F21;
+  --light-muted: #665238;
+  --light-panel-bg: rgba(255,251,243,0.96);
+  --light-panel-border: rgba(148,108,50,0.22);
+  --light-card-bg: rgba(255,248,237,0.96);
+  --light-input-bg: #FFF2D9;
+  --light-input-border: rgba(148,108,50,0.35);
+  --light-chat-bg: rgba(246,235,217,0.98);
+  --light-bot-msg-bg: rgba(243,230,209,0.98);
+  --light-user-msg-bg: rgba(216,176,102,0.16);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,12 +47,13 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: #0E0B06;
-  color: var(--parchment);
+  background: var(--bg);
+  color: var(--text);
   font-family: 'Crimson Pro', Georgia, serif;
   font-size: 17px;
   min-height: 100vh;
   overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 /* Starfield bg */
@@ -86,14 +106,26 @@ body::before {
 
 /* ── PANELS ── */
 .panel {
-  background: rgba(20,14,4,0.85);
-  border: 1px solid rgba(201,168,76,0.2);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 4px;
   padding: 1.75rem;
   margin-bottom: 1.25rem;
   backdrop-filter: blur(4px);
   position: relative;
   overflow: hidden;
+  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+}
+.clue-card,
+.msg-bub,
+.chat-input,
+.field select,
+.field input[type=text],
+.theme-toggle,
+.btn-generate,
+.btn-check,
+.btn-send {
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
 .panel::before {
   content: '';
@@ -126,10 +158,10 @@ body::before {
 }
 .field select, .field input[type=text] {
   width: 100%;
-  background: rgba(30,20,5,0.8);
-  border: 1px solid rgba(201,168,76,0.25);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 3px;
-  color: var(--parchment);
+  color: var(--text);
   font-family: 'Crimson Pro', serif;
   font-size: 15px;
   padding: 10px 12px;
@@ -140,12 +172,20 @@ body::before {
 .field select:focus, .field input[type=text]:focus {
   border-color: var(--gold-dim);
 }
-.field select option { background: #1A1208; }
+.field select option {
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+body.theme-light .field select option {
+  background: var(--light-input-bg);
+  color: var(--light-text);
+}
 
 .clue-slider-wrap { grid-column: 1 / -1; }
 .clue-slider-wrap .slider-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
 input[type=range] {
-  flex: 1; -webkit-appearance: none; height: 3px;
+  flex: 1; -webkit-appearance: none; appearance: none; height: 3px;
   background: rgba(201,168,76,0.2); border-radius: 2px; outline: none;
 }
 input[type=range]::-webkit-slider-thumb {
@@ -180,6 +220,25 @@ input[type=range]::-webkit-slider-thumb {
 .btn-generate:hover { border-color: var(--gold); color: var(--gold-light); box-shadow: var(--glow-gold); }
 .btn-generate:hover::before { opacity: 1; }
 .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1rem;
+  padding: 10px 16px;
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 999px;
+  background: rgba(201,168,76,0.08);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.theme-toggle:hover { background: rgba(201,168,76,0.14); }
 
 /* ── LOADING ── */
 .loading-overlay {
@@ -347,12 +406,12 @@ input[type=range]::-webkit-slider-thumb {
   padding: 10px 14px; border-radius: 3px;
 }
 .msg.bot .msg-bub {
-  background: rgba(25,17,4,0.8);
+  background: var(--chat-bg);
   border: 1px solid rgba(201,168,76,0.12);
   color: var(--parchment-dark); font-style: italic;
 }
 .msg.user .msg-bub {
-  background: rgba(201,168,76,0.08);
+  background: var(--user-msg-bg);
   border: 1px solid rgba(201,168,76,0.2);
   color: var(--parchment);
 }
@@ -441,6 +500,64 @@ input[type=range]::-webkit-slider-thumb {
   border: 1px solid rgba(201,168,76,0.2);
   border-radius: 3px; margin-bottom: 1.25rem; overflow: hidden;
 }
+
+body.theme-light {
+  background: var(--light-bg);
+  color: var(--light-text);
+}
+body.theme-light::before {
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(160,120,60,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(140,100,45,0.05) 0%, transparent 50%);
+}
+body.theme-light .panel {
+  background: var(--light-panel-bg);
+  border-color: var(--light-panel-border);
+}
+body.theme-light .site-header .eyebrow,
+body.theme-light .site-header h1 span,
+body.theme-light .site-header p,
+body.theme-light .hunt-meta,
+body.theme-light .config-val,
+body.theme-light .progress-label,
+body.theme-light .clue-riddle,
+body.theme-light .clue-hint-text,
+body.theme-light .lb-name,
+body.theme-light .lb-score,
+body.theme-light .chat-name,
+body.theme-light .pill,
+body.theme-light .clue-feedback {
+  color: var(--light-muted);
+}
+body.theme-light .clue-card {
+  background: var(--light-card-bg);
+  border-color: rgba(160,120,60,0.15);
+}
+body.theme-light .answer-input,
+body.theme-light .field select,
+body.theme-light .field input[type=text] {
+  background: var(--light-input-bg);
+  border-color: var(--light-input-border);
+  color: var(--light-text);
+}
+body.theme-light .btn-generate,
+body.theme-light .btn-check,
+body.theme-light .btn-send,
+body.theme-light .theme-toggle {
+  color: var(--light-text);
+  border-color: rgba(160,120,60,0.35);
+}
+body.theme-light .chat-panel {
+  background: var(--light-panel-bg);
+}
+body.theme-light .msg.bot .msg-bub {
+  background: var(--light-bot-msg-bg);
+  color: var(--light-text);
+}
+body.theme-light .msg.user .msg-bub {
+  background: var(--light-user-msg-bg);
+  color: var(--light-text);
+}
 .nav-tab {
   flex: 1; padding: 10px;
   font-family: 'Cinzel', serif; font-size: 10px;
@@ -467,6 +584,7 @@ input[type=range]::-webkit-slider-thumb {
     <h1>The Oracle's <span>Treasure Hunt</span></h1>
     <div class="divider"></div>
     <p>AI-generated riddles · Chatbot guide · Real-time adventure</p>
+    <button class="theme-toggle" id="themeToggle" type="button" onclick="toggleTheme()">Switch to Light Theme</button>
   </header>
 
   <!-- NAV TABS -->
@@ -923,6 +1041,25 @@ async function loadLeaderboard() {
 }
 
 // ── Reset ─────────────────────────────────────────────────────────
+function setTheme(theme) {
+  document.body.classList.toggle('theme-light', theme === 'light');
+  const button = document.getElementById('themeToggle');
+  if (button) {
+    button.textContent = theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme';
+  }
+  localStorage.setItem('treasure_theme', theme);
+}
+
+function toggleTheme() {
+  const theme = document.body.classList.contains('theme-light') ? 'dark' : 'light';
+  setTheme(theme);
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('treasure_theme') || 'dark';
+  setTheme(saved);
+}
+
 function resetHunt() {
   state = {...state, huntId: null, clues: [], solved: [], currentClue: 0, huntData: null};
   document.getElementById('setupPanel').style.display = 'block';
@@ -932,6 +1069,8 @@ function resetHunt() {
   document.getElementById('cluesList').innerHTML = '';
   document.getElementById('generateBtn').disabled = false;
 }
+
+loadTheme();
 </script>
 </body>
 </html>
